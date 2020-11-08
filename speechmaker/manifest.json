@@ -7,6 +7,7 @@
 
     "background": {
         "scripts": [
+            "speech.js",
             "background.js"
         ]
     },
@@ -17,6 +18,7 @@
 
     "permissions": [
         "activeTab",
-        "contextMenus"
+        "contextMenus",
+        "storage"
     ]
 }
