@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2,
+    "name": "Speech Maker",
+    "description": "Speech synthesize through Web Speech API.",
+    "version": "0.01",
+    "homepage_url": "https://github.com/chiguri/speechmaker_firefox",
+
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
+    },
+
+    "options_ui": {
+        "page": "options.html"
+    },
+
+    "permissions": [
+        "activeTab",
+        "contextMenus"
+    ]
+}
