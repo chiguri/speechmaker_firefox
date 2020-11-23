@@ -1,5 +1,5 @@
 var inputForm = document.querySelector('form');
-var inputTxt = document.querySelector('input');
+var inputTxt = document.querySelector('#textarea');
 var voiceSelect = document.querySelector('select');
 
 var pitch = document.querySelector('#pitch');
@@ -9,52 +9,59 @@ var rateValue = document.querySelector('.rate-value');
 var volume = document.querySelector('#volume');
 var volumeValue = document.querySelector('.volume-value');
 
+var bou_com = document.querySelector('#bouyomi-com');
+
 var voices = [];
 
-function storeParams(kind, value) {
+function storeParams(name, kind, value) {
     var obj = {
-        [voiceSelect.selectedOptions[0].getAttribute('data-name') + kind] : value
+        [prefix + name + kind] : value
     };
     browser.storage.local.set(obj);
 }
 
 pitch.onchange = function() {
     pitchValue.textContent = pitch.value;
-    storeParams('pitch', pitch.value);
+    storeParams(voiceSelect.selectedOptions[0].getAttribute('data-name'), post_pitch, pitch.value);
 }
 
 rate.onchange = function() {
     rateValue.textContent = rate.value;
-    storeParams('rate', rate.value);
+    storeParams(voiceSelect.selectedOptions[0].getAttribute('data-name'), post_rate, rate.value);
 }
 
 volume.onchange = function() {
     volumeValue.textContent = volume.value;
-    storeParams('volume', volume.value);
+    storeParams(voiceSelect.selectedOptions[0].getAttribute('data-name'), post_volume, volume.value);
 }
 
+bou_com.onchange = function() {
+    storeParams(bouyomi, post_handle, bou_com.checked);
+}
 
 function loadAdjustParams(name) {
+    var pname = prefix + name;
     browser.storage.local.get({
-        [name + 'pitch']  : 1,
-        [name + 'rate']   : 1,
-        [name + 'volume'] : 1
+        [pname + post_pitch]  : 1,
+        [pname + post_rate]   : 1,
+        [pname + post_volume] : 1,
+        [prefix + bouyomi + post_handle] : true
     }, function(res) {
-        pitch.value  = res[name+'pitch'];
-        rate.value   = res[name+'rate'];
-        volume.value = res[name+'volume'];
+        pitch.value  = res[pname + post_pitch];
+        rate.value   = res[pname + post_rate];
+        volume.value = res[pname + post_volume];
         pitchValue.textContent = pitch.value;
         rateValue.textContent = rate.value;
         volumeValue.textContent = volume.value;
+        bou_com.checked = res[prefix + bouyomi + post_handle];
     });
 }
 
 
 voiceSelect.onchange = function(){
-    browser.storage.local.set({selectedvoice : voiceSelect.selectedOptions[0].getAttribute('data-name')});
+    browser.storage.local.set({[voice_select] : voiceSelect.selectedOptions[0].getAttribute('data-name')});
     loadAdjustParams(voiceSelect.selectedOptions[0].getAttribute('data-name'));
 }
-
 
 
 function buildVoiceList() {
@@ -64,7 +71,7 @@ function buildVoiceList() {
         else if ( a.name == b.name ) return 0;
         else return +1;
     });
-    browser.storage.local.get('selectedvoice',
+    browser.storage.local.get(voice_select,
                                 function(res){
                                     var selectedIndex = voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
                                     var set = false;
@@ -76,7 +83,7 @@ function buildVoiceList() {
                                         option.setAttribute('data-lang', voices[i].lang);
                                         option.setAttribute('data-name', voices[i].name);
                                         voiceSelect.appendChild(option);
-                                        if(voices[i].name === res['selectedvoice']) {
+                                        if(voices[i].name === res[voice_select]) {
                                             selectedIndex = i;
                                             set = true;
                                         }
@@ -84,19 +91,20 @@ function buildVoiceList() {
                                     var option = document.createElement('option');
                                     option.textContent = '棒読みちゃん (ja-JP)';
                                     option.setAttribute('data-lang', 'ja-JP');
-                                    option.setAttribute('data-name', 'BouyomiChan');
-                                    if('BouyomiChan' === res['selectedvoice']) {
+                                    option.setAttribute('data-name', bouyomi);
+                                    if(bouyomi === res[voice_select]) {
                                         selectedIndex = i;
                                         set = true;
                                     }
                                     voiceSelect.appendChild(option);
                                     voiceSelect.selectedIndex = selectedIndex;
                                     if(set) {
-                                        loadAdjustParams(res['selectedvoice']);
+                                        loadAdjustParams(res[voice_select]);
                                     }
                                 }
     );
 }
+
 
 buildVoiceList();
 if (speechSynthesis.onvoiceschanged !== undefined) {
@@ -111,8 +119,9 @@ inputForm.onsubmit = function(event) {
     var _pitch  = pitch.value;
     var _rate   = rate.value;
     var _volume = volume.value;
+    var _com    = true;
     if(index >= voices.length) {
-        bouyomiSynth([inputTxt.value], _pitch, _rate, _volume);
+        bouyomiSynth([inputTxt.value], _pitch, _rate, _volume, _com);
     }
     else {
         makeSpeech(window.speechSynthesis, voices[index], [inputTxt.value], _pitch, _rate, _volume);
