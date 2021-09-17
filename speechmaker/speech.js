@@ -56,17 +56,31 @@ function makeSpeech(synth, voice, texts, pitch, rate, volume) {
 }
 
 
+function splitToSentences(text, sw) {
+    if(sw == 0) { // JP
+        return text.replace(/\n/g,'').replace(/[。．：；]/g,'$&\n').split(/\n/).filter(str => str !== "");
+    }
+    // currently, only EN is expected (I don't know what is used as marks for ends of sentences in other languages)
+    return text.replace(/\n/g,' ').replace(/  /g,' ').replace(/[.:;]/g,'$&\n').split(/\n/).filter(str => str !== "");
+}
+
+function selectLang(lang) {
+    if(lang === 'ja-JP') return 0; // TODO 正規表現などの方が良い？
+    return 1;
+}
+
+
 function textSpeech(text, name) {
     const pname = prefix + name;
     //console.log("SpeechMaker (Text Info): " + text);
-    const texts = text.replace(/[。．：；]/g,'$&\n').split(/\n/).filter(str => str !== ""); // 要調整：設定でいじれるようにする？
-    //console.log("SpeechMaker (Splitted Texts): " + texts);
-    if(texts.length <= 0) {
-        console.log("SpeechMaker : Text is empty, skip.");
-        return;
-    }
 
     if(name === bouyomi) {
+        const texts = splitToSentences(text, 0); // texts are expected as JP
+        if(texts.length <= 0) {
+            console.log("SpeechMaker : Text is empty, skip.");
+            return;
+        }
+
         browser.storage.local.get({
             [pname + post_pitch]  : 1,
             [pname + post_rate]   : 1,
@@ -86,18 +100,20 @@ function textSpeech(text, name) {
     var synth = window.speechSynthesis;
     var voices = synth.getVoices();
     // 要voice選択などの情報取得
-    var voice = null;
+    var voice_candidate = null;
     for(var i = 0; i < voices.length ; i++) {
         if(voices[i].name === name) {
-            voice = voices[i];
+            voice_candidate = voices[i];
             break;
         }
     }
-
+    const voice = voice_candidate;
     if(voice == null) {
         console.error("SpeechMaker (Voice Info) : Voice is not set (or removed after setting), abort.");
         return;
     }
+
+    const texts = splitToSentences(text, selectLang(voice.lang)); // TODO : textから言語を調べる、とか？
 
     browser.storage.local.get({
         [pname + post_pitch]  : 1,
